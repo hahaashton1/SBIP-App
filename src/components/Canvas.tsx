@@ -11,24 +11,33 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
 
-  useEffect(() => {
+  const resizeCanvas = () => {
     const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.width = width * 2;
-      canvas.height = height * 2; 
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+    if (canvas && canvas.parentElement) {
+      canvas.width = canvas.parentElement.offsetWidth * 2; // scaling for high-DPI devices
+      canvas.height = canvas.parentElement.offsetHeight * 2; // scaling for high-DPI devices
+      canvas.style.width = `${canvas.parentElement.offsetWidth}px`;
+      canvas.style.height = `${canvas.parentElement.offsetHeight}px`;
 
       const context = canvas.getContext('2d');
       if (context) {
         context.scale(2, 2);
         context.lineCap = 'round';
         context.strokeStyle = 'black';
-        context.lineWidth = 2;
+        context.lineWidth = 5;
         contextRef.current = context;
       }
     }
-  }, [width, height]);
+  }
+
+  useEffect(() => {
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    }
+  }, []);
 
 
   const startDrawing = (event: React.MouseEvent): void => {
@@ -64,7 +73,7 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
   };
 
   return (
-    <Box width={width} height={height} boxShadow={2} borderRadius={2}>
+    <Box boxShadow={2} borderRadius={2} style={{ width: '100%', height: '40vh' }}>
       <canvas
         onMouseDown={startDrawing}
         onMouseUp={finishDrawing}

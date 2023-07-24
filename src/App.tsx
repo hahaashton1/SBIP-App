@@ -9,8 +9,14 @@ import Canvas from "./components/Canvas";
 
 const App = () => {
 
+  // States for image upload
   const [selectedImage, setSelectedImage] = useState<string | ArrayBuffer | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // States for smart contract information
+  const [contractAddress, setContractAddress] = useState<string>("");
+  const [storedHash, setStoredHash] = useState<string>("");
+  const [transactionHash, setTransactionHash] = useState<string>("");
 
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -83,8 +89,23 @@ const App = () => {
           />
           <Stack spacing={1}>
             <Typography variant="subtitle1">Contract Address</Typography>
+              {contractAddress ? (
+                <Typography variant="subtitle1">{contractAddress}</Typography>
+              ) : (
+                <Typography variant="subtitle1">-</Typography>
+              )}
             <Typography variant="subtitle1">Stored Hash</Typography>
+              {storedHash ? (
+                <Typography variant="subtitle1">{contractAddress}</Typography>
+              ) : (
+                <Typography variant="subtitle1">-</Typography>
+              )}
             <Typography variant="subtitle1">Transaction Hash</Typography>
+              {transactionHash ? (
+                <Typography variant="subtitle1">{contractAddress}</Typography>
+              ) : (
+                <Typography variant="subtitle1">-</Typography>
+              )}
           </Stack>
         </Grid>
       </Grid>
