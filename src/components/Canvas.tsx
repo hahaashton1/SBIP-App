@@ -2,11 +2,14 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 
 interface CanvasProps {
-    width: number;
-    height: number;
-  }
+  width: number;
+  height: number;
+  onDrawingChange?: (data: ImageData | null) => void;
+  clear: boolean;
+}
 
-const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
+const Canvas: React.FC<CanvasProps> = ({ width, height, onDrawingChange, clear }) => {
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -29,6 +32,15 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
       }
     }
   }
+  
+  useEffect(() => {
+    if (clear) {
+      const context = contextRef.current;
+      if (context) {
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+      }
+    }
+  }, [clear]);
 
   useEffect(() => {
     resizeCanvas();
@@ -38,7 +50,6 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
       window.removeEventListener('resize', resizeCanvas);
     }
   }, []);
-
 
   const startDrawing = (event: React.MouseEvent): void => {
     const nativeEvent = event.nativeEvent;
@@ -55,6 +66,8 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
     const context = contextRef.current;
     if (context) {
       context.closePath();
+      const imageData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
+      onDrawingChange && onDrawingChange(imageData);
     }
     setIsDrawing(false);
   };

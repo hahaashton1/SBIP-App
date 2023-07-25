@@ -3,12 +3,27 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Import WAGMI
+import { WagmiConfig, createConfig, sepolia } from 'wagmi'
+import { createPublicClient, http } from 'viem'
+
+const config = createConfig({
+  autoConnect: true,
+  publicClient: createPublicClient({
+    chain: sepolia,
+    transport: http()
+  }),
+})
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+
 root.render(
   <React.StrictMode>
-    <App />
+    <WagmiConfig config={config}>
+      <App />
+    </WagmiConfig>
   </React.StrictMode>
 );
 
