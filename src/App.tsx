@@ -18,14 +18,9 @@ import sha3 from "js-sha3";
 import { useAccount, useContractWrite, usePrepareContractWrite } from "wagmi";
 
 const App = () => {
+
   // Global WAGMI hooks to access the connected wallet
   const { address, isConnected } = useAccount();
-
-  // States for image upload
-  const [uploadedImage, setUploadedImage] = useState<
-    string | ArrayBuffer | null
-  >(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Canvas image data
   const [imageData, setImageData] = useState<ImageData | null>(null);
@@ -45,17 +40,6 @@ const App = () => {
     }
   };
 
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   // const handleImageClear = () => {
   //   setImageData(null);
   // };
@@ -64,17 +48,8 @@ const App = () => {
     setClear(true);
   };
 
-  const handleRemoveUpload = () => {
-    setUploadedImage(null);
-  };
-
-  const handleUpload = () => {
-    fileInputRef.current?.click();
-  };
-
   const handleSubmit = () => {
     if (imageData) {
-      setUploadedImage(imageData.data.buffer);
       console.log(imageData);
     }
   };
@@ -88,42 +63,18 @@ const App = () => {
       <NavBar />
       <Grid container spacing={2}>
         <Grid md={8} flexDirection="column" display="flex" gap={2}>
-          {uploadedImage ? (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="h6">Uploaded Image</Typography>
-                <Button variant="text" onClick={handleRemoveUpload}>
-                  Remove
-                </Button>
-              </div>
-              <Box
-                boxShadow={2}
-                borderRadius={2}
-                style={{ width: "100%", height: "40vh" }}
-              >
-                <img
-                  src={uploadedImage.toString()}
-                  alt="Preview"
-                  style={{ height: "100%", width: "100%", borderRadius: "2px" }}
-                />
-              </Box>
-            </>
-          ) : (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="h6">Draw Signature</Typography>
-                <Button variant="text" onClick={handleClearCanvas}>
-                  Clear
-                </Button>
-              </div>
-              <Canvas
-                width={500}
-                height={400}
-                onDrawingChange={handleDrawingChange}
-                clear={clear}
-              />
-            </>
-          )}
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <Typography variant="h6">Draw Signature</Typography>
+            <Button variant="text" onClick={handleClearCanvas}>
+              Clear
+            </Button>
+          </div>
+          <Canvas
+            width={500}
+            height={400}
+            onDrawingChange={handleDrawingChange}
+            clear={clear}
+          />
           {isConnected ? (
             <>
               <Button
@@ -134,15 +85,6 @@ const App = () => {
               >
                 Submit
               </Button>
-              <Divider>OR</Divider>
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{ borderRadius: "20px" }}
-                onClick={handleUpload}
-              >
-                Upload
-              </Button>
             </>
           ) : (
             <>
@@ -153,15 +95,6 @@ const App = () => {
                 disabled
               >
                 Submit
-              </Button>
-              <Divider>OR</Divider>
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{ borderRadius: "20px" }}
-                disabled
-              >
-                Upload
               </Button>
             </>
           )}
@@ -180,7 +113,7 @@ const App = () => {
             boxShadow={2}
             style={{ opacity: 0.5 }}
           >
-            {uploadedImage ? (
+            {imageData ? (
               <img
                 src={""}
                 alt="Preview"
@@ -191,13 +124,6 @@ const App = () => {
             )}
           </Box>
           <Divider />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            style={{ display: "none" }}
-            ref={fileInputRef}
-          />
           <Stack spacing={1}>
             <Typography variant="subtitle1">Contract Address</Typography>
             {contractAddress ? (
