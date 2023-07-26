@@ -14,6 +14,7 @@ const Canvas: React.FC<CanvasProps> = ({ width, height, onDrawingChange, clear }
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
 
+  // Double check what this does
   const resizeCanvas = () => {
     const canvas = canvasRef.current;
     if (canvas && canvas.parentElement) {
