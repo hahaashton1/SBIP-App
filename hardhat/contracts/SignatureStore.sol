@@ -3,17 +3,18 @@ pragma solidity ^0.8.9;
 
 contract SignatureStore  {
 
-    mapping (address => string) private signatures;
+    mapping (address => string) private hashes;
 
     // Setter method
-    function storeSignature(string memory signature) external {
+    function storeHash(string memory hash) external {
         require(msg.sender == tx.origin, "Only EOA can call this function");
-        require(bytes(signature).length > 0, "Signature cannot be empty");
-        signatures[msg.sender] = signature;
+        require(bytes(hash).length > 0, "Signature cannot be empty");
+
+        hashes[msg.sender] = hash;
     }
 
     // Getter method
-    function getSignature(address user) external view returns (string memory) {
-        return signatures[user];
+    function getHash(address user) external view returns (string memory) {
+        return hashes[user];
     }
 }

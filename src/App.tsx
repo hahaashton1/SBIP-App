@@ -18,10 +18,8 @@ import PreviewBox from "./components/PreviewBox";
 import { contractABI, contractAddr } from "./utils/contract";
 
 // Import WAGMI hooks
-import { useAccount, useContractWrite, usePrepareContractWrite, Address, useContractRead } from "wagmi";
-
-import { keccak256 } from "js-sha3";
-import { debounce } from "lodash";
+import { useAccount, useContractWrite, usePrepareContractWrite, Address, useContractRead, useSignMessage } from "wagmi";
+import { debounce, set } from "lodash";
 
 const App: React.FC = () => {
 
@@ -41,38 +39,34 @@ const App: React.FC = () => {
   const [transactionHash, setTransactionHash] = useState<string>("");
   const [existingHash, setExistingHash] = useState<string>("");
 
+  // States for buttons
+  const [signFlag, setSignFlag] = useState<boolean>(false);
+  const [submitFlag, setSubmitFlag] = useState<boolean>(false);
+
+  // Sets all states to default
   const clearAllStates = () => {
     setStoredHash("");
     setTransactionHash("");
     setExistingHash("");
     setBase64Image("");
     setContractAddress("");
+    handleClearCanvas();
   };
 
   // onChange hook for to get data from the child canvas component
   const handleDrawingChange = (data: ImageData | null) => {
     setImageData(data);
-
-
-
-
-
-
-
-
     if (clear) {
       setClear(false);
     }
   };
 
+  // Clears the entire drawing canvas
   const handleClearCanvas = () => {
     setClear(true);
   };
 
-  const hashBase64 = (signature: any) => {
-    return keccak256(signature);
-  };
-
+  // Converts ImageData to base64
   const imageDataToBase64 = (imageData: ImageData): string => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -89,52 +83,55 @@ const App: React.FC = () => {
     return canvas.toDataURL();
   }
 
+  // Executes storing of signed message
   const handleSubmit = () => {
-
-    // Convert ImageData to Base64
-    if (imageData) {
-      const base64 = imageDataToBase64(imageData);
-      // So that it can be used in preview
-      setBase64Image(base64);
-      setStoredHash(hashBase64(base64));
+    if (imageData && submitFlag) {
+      storeHash?.();
     }
     // Clear Canvas
     handleClearCanvas();
-
-    storeSignature?.();
-
   };
 
+  // Executes signing for base64 image
+  const handleSign = () => {
+    if (imageData && signFlag) {
+      signMessage();
+      const base64 = imageDataToBase64(imageData);
+      // So that it can be used in preview
+      setBase64Image(base64);
+    }
+  }
+
+  // Debounce for submit and sign buttons
   const debounceOnSubmit = debounce(handleSubmit, 300);
+  const debounceOnSign = debounce(handleSign, 300);
 
   // WAGMI hooks for smart contract
   const { config } = usePrepareContractWrite({
     address: contractAddr as Address,
     abi: contractABI,
-    functionName: "storeSignature",
-    args: [hashBase64(base64Image)],
+    functionName: "storeHash",
+    args: [storedHash],
     enabled: Boolean(storedHash)
   });
 
-  const { write: storeSignature } = useContractWrite({
+  const { write: storeHash } = useContractWrite({
     ...config,
     onSuccess(data) {
       console.log("Write operation is successful", data);
       setTransactionHash(data.hash);
-      //setExistingHash("");
+      setSubmitFlag(false);
+      setSignFlag(true);
     },
     onError(error) {
       console.log("Write operation is unsuccessful", error);
-      setStoredHash("");
-      setBase64Image("");
     }
   });
 
-  // This should be changed to getStoredHash
-  const getSignature = useContractRead({
+  const getHash = useContractRead({
     address: contractAddr as Address,
     abi: contractABI,
-    functionName: "getSignature",
+    functionName: "getHash",
     args: [address],
     enabled: Boolean(address),
     onSuccess(data) {
@@ -143,19 +140,74 @@ const App: React.FC = () => {
     }
   });
 
+  const { data, isError, isLoading, isSuccess, signMessage } = useSignMessage({
+    message: imageDataToBase64(imageData ? imageData : new ImageData(1, 1)),
+    onSuccess(data) {
+      console.log("Sign operation is successful", data);
+      setStoredHash(data);
+      setSubmitFlag(true);
+      setSignFlag(false);
+    }
+  })
+
   useEffect(() => {
     if (isConnected) {
-      getSignature.refetch();
+      getHash.refetch();
       setContractAddress(contractAddr);
+      setSignFlag(true);
     }
     else if (isDisconnected) {
       clearAllStates();
+      setSignFlag(false);
+      setSubmitFlag(false);
     }
   }, [isConnected, isDisconnected]);
 
+  // Conditional function to render buttons
+  const renderButtons = () => {
+    if (isConnected) {
+      if (signFlag) {
+        return (
+          <Button
+            fullWidth
+            variant="contained"
+            sx={{ borderRadius: "20px" }}
+            onClick={debounceOnSign}
+          >
+            Click here to sign your signature
+          </Button>
+        );
+      }
+      else if (submitFlag) {
+        return (
+          <Button
+            fullWidth
+            variant="contained"
+            sx={{ borderRadius: "20px" }}
+            onClick={debounceOnSubmit}
+          >
+            Click here to submit
+          </Button>
+        );
+      }
+    }
+    else {
+      return (
+        <Button
+          fullWidth
+          variant="contained"
+          sx={{ borderRadius: "20px" }}
+          disabled
+        >
+          Please login to sign
+        </Button>
+      );
+    }
+  }
+
   return (
     <Grid container spacing={2}>
-      <Grid md={8} flexDirection="column" display="flex" gap={2}>
+      <Grid xs={12} sm={12} md={8} flexDirection="column" display="flex" gap={2}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="h6">Draw Signature</Typography>
           <Button variant="outlined" onClick={handleClearCanvas}>
@@ -168,31 +220,9 @@ const App: React.FC = () => {
           onDrawingChange={handleDrawingChange}
           clear={clear}
         />
-        {isConnected ? (
-          <>
-            <Button
-              fullWidth
-              variant="contained"
-              sx={{ borderRadius: "20px" }}
-              onClick={debounceOnSubmit}
-            >
-              Submit
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              fullWidth
-              variant="contained"
-              sx={{ borderRadius: "20px" }}
-              disabled
-            >
-              Submit
-            </Button>
-          </>
-        )}
+        {renderButtons()}
       </Grid>
-      <Grid md={4} flexDirection="column" display="flex" gap={2}>
+      <Grid xs={12} sm={12} md={4} flexDirection="column" display="flex" gap={2}>
         <Typography variant="h6">Preview</Typography>
         {base64Image ? (
           <Box
@@ -228,6 +258,16 @@ const App: React.FC = () => {
                 <ListItemText
                   primary="Existing Hash"
                   secondary={existingHash ? existingHash : "-"}
+                  primaryTypographyProps={{
+                    style: {
+                      color: "red",
+                    }
+                  }}
+                  secondaryTypographyProps={{
+                    style: {
+                      overflowWrap: "break-word",
+                    }
+                  }}
                 />
               </ListItem>
             )
@@ -236,12 +276,22 @@ const App: React.FC = () => {
             <ListItemText
               primary="Stored Hash"
               secondary={storedHash ? storedHash : "-"}
+              secondaryTypographyProps={{
+                style: {
+                  overflowWrap: "break-word",
+                }
+              }}
             />
           </ListItem>
           <ListItem>
             <ListItemText
               primary="Transaction Hash"
               secondary={transactionHash ? transactionHash : "-"}
+              secondaryTypographyProps={{
+                style: {
+                  overflowWrap: "break-word",
+                }
+              }}
             />
           </ListItem>
         </List>

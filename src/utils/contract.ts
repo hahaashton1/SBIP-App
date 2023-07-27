@@ -1,2 +1,2 @@
-export const contractABI = [{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getSignature","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"signature","type":"string"}],"name":"storeSignature","outputs":[],"stateMutability":"nonpayable","type":"function"}];
-export const contractAddr = "0xC6AfcdaCc484702Af9A25B77A541695716c9E363";
+export const contractABI = [{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getHash","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"hash","type":"string"}],"name":"storeHash","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+export const contractAddr = "0xCB768F95A69Eb4Ea818480e993d92163cB8E453a";
